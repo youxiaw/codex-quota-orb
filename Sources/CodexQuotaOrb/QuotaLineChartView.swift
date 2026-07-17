@@ -4,42 +4,72 @@ struct QuotaLineChartView: View {
     let samples: [QuotaSnapshot]
     @State private var hoverLocation: CGPoint?
 
-    private let plotInsets = EdgeInsets(top: 18, leading: 36, bottom: 28, trailing: 14)
+    private let plotInsets = EdgeInsets(top: 26, leading: 38, bottom: 30, trailing: 18)
 
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.black.opacity(0.2),
-                                Color.white.opacity(0.045)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                chartBackground
 
-                grid(in: plotRect(in: proxy.size))
-                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                let rect = plotRect(in: proxy.size)
+
+                grid(in: rect)
+                    .stroke(Color.white.opacity(0.13), lineWidth: 1)
 
                 axisLabels(in: proxy.size)
 
-                linePath(in: plotRect(in: proxy.size), values: weeklyValues)
-                    .stroke(Color.cyan.opacity(0.92), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                if samples.isEmpty {
+                    emptyState
+                } else {
+                    areaPath(in: rect, series: weeklySeries)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.cyan.opacity(0.28),
+                                    Color.cyan.opacity(0.04),
+                                    Color.clear
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
 
-                linePath(in: plotRect(in: proxy.size), values: fiveHourValues)
-                    .stroke(Color.orange.opacity(0.88), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                    areaPath(in: rect, series: fiveHourSeries)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.orange.opacity(0.22),
+                                    Color.orange.opacity(0.035),
+                                    Color.clear
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+
+                    linePath(in: rect, series: weeklySeries)
+                        .stroke(Color.cyan.opacity(0.18), style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
+                        .blur(radius: 5)
+                    linePath(in: rect, series: weeklySeries)
+                        .stroke(Color.cyan.opacity(0.98), style: StrokeStyle(lineWidth: 3.2, lineCap: .round, lineJoin: .round))
+
+                    linePath(in: rect, series: fiveHourSeries)
+                        .stroke(Color.orange.opacity(0.18), style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
+                        .blur(radius: 4)
+                    linePath(in: rect, series: fiveHourSeries)
+                        .stroke(Color.orange.opacity(0.95), style: StrokeStyle(lineWidth: 2.6, lineCap: .round, lineJoin: .round))
+
+                    currentMarkers(in: rect)
+                }
 
                 legend
 
                 if let hover = hoverLocation,
-                   let point = nearestSample(to: hover, in: plotRect(in: proxy.size)) {
-                    hoverOverlay(point, in: plotRect(in: proxy.size))
+                   let point = nearestSample(to: hover, in: rect) {
+                    hoverOverlay(point, in: rect)
                 }
             }
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .onContinuousHover { phase in
                 switch phase {
                 case .active(let location):
@@ -51,12 +81,58 @@ struct QuotaLineChartView: View {
         }
     }
 
-    private var weeklyValues: [Double] {
-        samples.compactMap { $0.weekly?.remainingPercent }
+    private var chartBackground: some View {
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.08, green: 0.1, blue: 0.15),
+                        Color(red: 0.035, green: 0.045, blue: 0.075)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RadialGradient(
+                    colors: [
+                        Color.cyan.opacity(0.18),
+                        Color.clear
+                    ],
+                    center: .topTrailing,
+                    startRadius: 8,
+                    endRadius: 210
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.14), lineWidth: 1)
+            )
+            .shadow(color: Color.cyan.opacity(0.08), radius: 16, y: 8)
     }
 
-    private var fiveHourValues: [Double] {
-        samples.compactMap { $0.fiveHour?.remainingPercent }
+    private var emptyState: some View {
+        VStack(spacing: 4) {
+            Text("Waiting for quota samples")
+                .font(.system(size: 12, weight: .heavy, design: .rounded))
+            Text("The curve appears after the first successful refresh")
+                .font(.system(size: 10.5, weight: .medium, design: .rounded))
+                .foregroundStyle(.secondary)
+        }
+        .foregroundStyle(.white.opacity(0.82))
+    }
+
+    private var weeklySeries: [SeriesPoint] {
+        samples.enumerated().compactMap { index, sample in
+            sample.weekly.map { SeriesPoint(index: index, value: $0.remainingPercent) }
+        }
+    }
+
+    private var fiveHourSeries: [SeriesPoint] {
+        samples.enumerated().compactMap { index, sample in
+            sample.fiveHour.map { SeriesPoint(index: index, value: $0.remainingPercent) }
+        }
     }
 
     private var legend: some View {
@@ -139,6 +215,35 @@ struct QuotaLineChartView: View {
         }
     }
 
+    private func currentMarkers(in rect: CGRect) -> some View {
+        ZStack {
+            if let point = weeklySeries.last {
+                marker(point, in: rect, color: .cyan)
+            }
+            if let point = fiveHourSeries.last {
+                marker(point, in: rect, color: .orange)
+            }
+        }
+    }
+
+    private func marker(_ point: SeriesPoint, in rect: CGRect, color: Color) -> some View {
+        let location = CGPoint(
+            x: xPosition(for: point.index, count: max(samples.count, 2), in: rect),
+            y: yPosition(for: point.value, in: rect)
+        )
+        return ZStack {
+            Circle()
+                .fill(color.opacity(0.18))
+                .frame(width: 20, height: 20)
+                .blur(radius: 2)
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+                .overlay(Circle().stroke(Color.white.opacity(0.85), lineWidth: 1))
+        }
+        .position(location)
+    }
+
     private func dot(at point: CGPoint, color: Color) -> some View {
         Circle()
             .fill(color)
@@ -182,22 +287,42 @@ struct QuotaLineChartView: View {
         return path
     }
 
-    private func linePath(in rect: CGRect, values: [Double]) -> Path {
+    private func linePath(in rect: CGRect, series: [SeriesPoint]) -> Path {
         var path = Path()
-        guard values.count > 1 else {
+        guard let first = series.first else {
             return path
         }
 
-        for (index, value) in values.enumerated() {
-            let x = xPosition(for: index, count: values.count, in: rect)
-            let y = yPosition(for: value, in: rect)
-            let point = CGPoint(x: x, y: y)
-            if index == 0 {
-                path.move(to: point)
-            } else {
-                path.addLine(to: point)
-            }
+        let firstPoint = CGPoint(
+            x: xPosition(for: first.index, count: max(samples.count, 2), in: rect),
+            y: yPosition(for: first.value, in: rect)
+        )
+        path.move(to: firstPoint)
+
+        guard series.count > 1 else {
+            path.addLine(to: CGPoint(x: firstPoint.x + 0.1, y: firstPoint.y))
+            return path
         }
+
+        for point in series.dropFirst() {
+            path.addLine(to: CGPoint(
+                x: xPosition(for: point.index, count: max(samples.count, 2), in: rect),
+                y: yPosition(for: point.value, in: rect)
+            ))
+        }
+        return path
+    }
+
+    private func areaPath(in rect: CGRect, series: [SeriesPoint]) -> Path {
+        var path = linePath(in: rect, series: series)
+        guard let first = series.first, let last = series.last else {
+            return Path()
+        }
+        let firstX = xPosition(for: first.index, count: max(samples.count, 2), in: rect)
+        let lastX = xPosition(for: last.index, count: max(samples.count, 2), in: rect)
+        path.addLine(to: CGPoint(x: lastX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: firstX, y: rect.maxY))
+        path.closeSubpath()
         return path
     }
 
@@ -256,5 +381,10 @@ struct QuotaLineChartView: View {
     private struct SamplePoint {
         let index: Int
         let snapshot: QuotaSnapshot
+    }
+
+    private struct SeriesPoint {
+        let index: Int
+        let value: Double
     }
 }
