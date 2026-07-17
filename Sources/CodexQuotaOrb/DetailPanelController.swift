@@ -5,7 +5,10 @@ import SwiftUI
 final class DetailPanelController {
     private static let size = NSSize(width: 472, height: 536)
     private static let gap: CGFloat = 14
+    private static let margin: CGFloat = 12
     private let window: NSWindow
+    private var localClickMonitor: Any?
+    private var globalClickMonitor: Any?
 
     init(state: QuotaState) {
         window = NSWindow(
@@ -41,6 +44,7 @@ final class DetailPanelController {
         window.alphaValue = 0
         window.setFrame(startFrame, display: false)
         window.makeKeyAndOrderFront(nil)
+        installOutsideClickMonitors()
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.18
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
@@ -50,6 +54,7 @@ final class DetailPanelController {
     }
 
     private func hide() {
+        removeOutsideClickMonitors()
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.12
             context.timingFunction = CAMediaTimingFunction(name: .easeIn)
@@ -60,20 +65,56 @@ final class DetailPanelController {
         }
     }
 
-    private func panelPlacement(near anchor: NSRect) -> (frame: NSRect, opensToRight: Bool) {
+    private func hideIfVisible() {
+        guard window.isVisible else {
+            return
+        }
+        hide()
+    }
+
+    private func installOutsideClickMonitors() {
+        removeOutsideClickMonitors()
+
+        localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+            guard let self else {
+                return event
+            }
+            if event.window !== self.window {
+                self.hideIfVisible()
+            }
+            return event
+        }
+
+        globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.hideIfVisible()
+            }
+        }
+    }
+
+    private func removeOutsideClickMonitors() {
+        if let localClickMonitor {
+            NSEvent.removeMonitor(localClickMonitor)
+            self.localClickMonitor = nil
+        }
+        if let globalClickMonitor {
+            NSEvent.removeMonitor(globalClickMonitor)
+            self.globalClickMonitor = nil
+        }
+    }
+
+    private func panelPlacement(near anchor: NSRect) -> PanelPlacement {
         let visible = screen(containing: anchor)?.visibleFrame
             ?? NSScreen.main?.visibleFrame
             ?? NSRect(x: 0, y: 0, width: 1200, height: 800)
 
-        let rightX = anchor.maxX + Self.gap
-        let leftX = anchor.minX - Self.size.width - Self.gap
-        let opensToRight = rightX + Self.size.width <= visible.maxX - 12 || leftX < visible.minX + 12
-        let preferredX = opensToRight ? rightX : leftX
-        let preferredY = anchor.midY - Self.size.height / 2
-
-        let x = min(max(preferredX, visible.minX + 12), visible.maxX - Self.size.width - 12)
-        let y = min(max(preferredY, visible.minY + 12), visible.maxY - Self.size.height - 12)
-        return (NSRect(origin: NSPoint(x: x, y: y), size: Self.size), opensToRight)
+        return PanelPlacementCalculator.place(
+            near: anchor,
+            panelSize: Self.size,
+            visibleFrame: visible,
+            gap: Self.gap,
+            margin: Self.margin
+        )
     }
 
     private func screen(containing rect: NSRect) -> NSScreen? {

@@ -27,4 +27,10 @@ swiftc \
   -o /tmp/codex-quota-history-tests
 /tmp/codex-quota-history-tests
 
+swiftc \
+  Sources/CodexQuotaOrb/PanelPlacementCalculator.swift \
+  Tests/PanelPlacementTests/main.swift \
+  -o /tmp/codex-quota-panel-placement-tests
+/tmp/codex-quota-panel-placement-tests
+
 echo "All tests passed"
