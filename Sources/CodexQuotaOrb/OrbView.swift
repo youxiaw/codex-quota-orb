@@ -7,11 +7,14 @@ struct OrbView: View {
     let onQuit: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var ringRotation = 0.0
+    @State private var glowPulse = false
 
     var body: some View {
         ZStack {
             glow
-                .opacity(isRefreshing ? 0.74 : 0.46)
+                .scaleEffect(glowPulse && !reduceMotion ? 1.035 : 1.0)
+                .opacity(isRefreshing ? 0.74 : (glowPulse && !reduceMotion ? 0.54 : 0.42))
 
             orbBase
 
@@ -31,10 +34,10 @@ struct OrbView: View {
             sparkleDots
 
             primaryRing
-                .rotationEffect(.degrees(isRefreshing ? 22 : 0))
+                .rotationEffect(.degrees(ringRotation + (isRefreshing ? 22 : 0)))
 
             secondaryRing
-                .rotationEffect(.degrees(isRefreshing ? -16 : 0))
+                .rotationEffect(.degrees(-ringRotation * 0.42 + (isRefreshing ? -16 : 0)))
 
             quotaRing
 
@@ -49,6 +52,9 @@ struct OrbView: View {
         .frame(width: 92, height: 92)
         .contentShape(Circle())
         .onTapGesture(perform: onToggle)
+        .task(id: reduceMotion) {
+            await runLowPowerMotion()
+        }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: isRefreshing)
         .contextMenu {
             Button("Refresh", action: onRefresh)
@@ -202,6 +208,25 @@ struct OrbView: View {
         }
         .foregroundStyle(ink)
         .shadow(color: .white.opacity(0.55), radius: 1, y: -1)
+    }
+
+    private func runLowPowerMotion() async {
+        guard !reduceMotion else {
+            return
+        }
+
+        while !Task.isCancelled {
+            try? await Task.sleep(nanoseconds: 8_000_000_000)
+            if Task.isCancelled {
+                return
+            }
+            await MainActor.run {
+                withAnimation(.easeOut(duration: 0.9)) {
+                    ringRotation += 10
+                    glowPulse.toggle()
+                }
+            }
+        }
     }
 
     private var percent: Double {
