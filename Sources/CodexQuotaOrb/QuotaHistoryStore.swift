@@ -94,6 +94,40 @@ final class QuotaHistoryStore {
         }
     }
 
+    func samples(since startDate: Date, limit: Int) throws -> [QuotaSnapshot] {
+        try withDatabase { database in
+            let sql = """
+            SELECT updated_at,
+                   five_hour_remaining,
+                   five_hour_used,
+                   five_hour_reset_at,
+                   weekly_remaining,
+                   weekly_used,
+                   weekly_reset_at
+            FROM quota_samples
+            WHERE updated_at >= ?
+            ORDER BY updated_at DESC
+            LIMIT ?;
+            """
+            var statement: OpaquePointer?
+            guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
+                throw error(database)
+            }
+            defer { sqlite3_finalize(statement) }
+            sqlite3_bind_double(statement, 1, startDate.timeIntervalSince1970)
+            sqlite3_bind_int(statement, 2, Int32(max(1, limit)))
+
+            var snapshots: [QuotaSnapshot] = []
+            while sqlite3_step(statement) == SQLITE_ROW {
+                let updatedAt = Date(timeIntervalSince1970: sqlite3_column_double(statement, 0))
+                let fiveHour = readWindow(statement, remainingIndex: 1, usedIndex: 2, resetIndex: 3, duration: 300)
+                let weekly = readWindow(statement, remainingIndex: 4, usedIndex: 5, resetIndex: 6, duration: 10_080)
+                snapshots.append(QuotaSnapshot(fiveHour: fiveHour, weekly: weekly, updatedAt: updatedAt))
+            }
+            return snapshots
+        }
+    }
+
     static func defaultDatabaseURL() -> URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory())

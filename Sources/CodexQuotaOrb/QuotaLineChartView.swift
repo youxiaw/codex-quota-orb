@@ -368,14 +368,23 @@ struct QuotaLineChartView: View {
 
     private func timeLabel(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
+        formatter.dateFormat = chartDuration > 24 * 60 * 60 ? "M/d" : "HH:mm"
         return formatter.string(from: date)
     }
 
     private func fullTimeLabel(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
+        formatter.dateFormat = chartDuration > 24 * 60 * 60 ? "M/d HH:mm:ss" : "HH:mm:ss"
         return formatter.string(from: date)
+    }
+
+    private var chartDuration: TimeInterval {
+        guard let first = samples.first?.updatedAt,
+              let last = samples.last?.updatedAt
+        else {
+            return 0
+        }
+        return last.timeIntervalSince(first)
     }
 
     private struct SamplePoint {

@@ -24,9 +24,7 @@ struct DetailPanelView: View {
                             .font(.system(size: 11, weight: .bold, design: .rounded))
                             .foregroundStyle(ink.opacity(0.48))
                         Spacer()
-                        Text("Hover for details")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .foregroundStyle(ink.opacity(0.48))
+                        rangePicker
                     }
 
                     QuotaLineChartView(samples: state.history)
@@ -36,6 +34,22 @@ struct DetailPanelView: View {
             .padding(22)
         }
         .frame(width: 472, height: 536)
+    }
+
+    private var rangePicker: some View {
+        Picker("Trend range", selection: Binding(
+            get: { state.trendRange },
+            set: { state.setTrendRange($0) }
+        )) {
+            ForEach(QuotaTrendRange.allCases) { range in
+                Text(range.title).tag(range)
+            }
+        }
+        .labelsHidden()
+        .pickerStyle(.segmented)
+        .frame(width: 178)
+        .controlSize(.small)
+        .help("Change trend time range")
     }
 
     private var header: some View {

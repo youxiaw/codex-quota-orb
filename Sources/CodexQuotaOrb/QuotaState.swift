@@ -14,6 +14,7 @@ final class QuotaState: ObservableObject {
     @Published private(set) var snapshot: QuotaSnapshot?
     @Published private(set) var history: [QuotaSnapshot] = []
     @Published private(set) var status: Status = .idle
+    @Published private(set) var trendRange: QuotaTrendRange = .oneHour
 
     private let provider: CodexQuotaProvider
     private let store: QuotaHistoryStore
@@ -21,7 +22,7 @@ final class QuotaState: ObservableObject {
     init(provider: CodexQuotaProvider = CodexQuotaProvider(), store: QuotaHistoryStore) {
         self.provider = provider
         self.store = store
-        self.history = (try? store.recentSamples(limit: 48).reversed()) ?? []
+        self.history = Self.loadHistory(from: store, range: trendRange)
         self.snapshot = history.last
         if snapshot != nil {
             self.status = .ready
@@ -35,14 +36,15 @@ final class QuotaState: ObservableObject {
 
     func refresh() {
         status = .refreshing
+        let range = trendRange
         Task.detached { [provider, store] in
             do {
                 let snapshot = try provider.fetch()
                 try store.save(snapshot)
-                let history = try store.recentSamples(limit: 48).reversed()
+                let history = Self.loadHistory(from: store, range: range)
                 await MainActor.run {
                     self.snapshot = snapshot
-                    self.history = Array(history)
+                    self.history = history
                     self.status = .ready
                 }
             } catch {
@@ -52,5 +54,20 @@ final class QuotaState: ObservableObject {
                 }
             }
         }
+    }
+
+    func setTrendRange(_ range: QuotaTrendRange) {
+        guard range != trendRange else {
+            return
+        }
+        trendRange = range
+        history = Self.loadHistory(from: store, range: range)
+        snapshot = history.last ?? snapshot
+    }
+
+    nonisolated private static func loadHistory(from store: QuotaHistoryStore, range: QuotaTrendRange, now: Date = Date()) -> [QuotaSnapshot] {
+        let startDate = now.addingTimeInterval(-range.interval)
+        let samples = (try? store.samples(since: startDate, limit: range.maxSamples)) ?? []
+        return Array(samples.reversed())
     }
 }

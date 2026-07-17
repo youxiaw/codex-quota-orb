@@ -42,12 +42,15 @@ let second = QuotaSnapshot(
 try store.save(first)
 try store.save(second)
 let samples = try store.recentSamples(limit: 10)
+let filteredSamples = try store.samples(since: Date(timeIntervalSince1970: 450), limit: 10)
 
 require(samples.count == 2, "history sample count")
 require(samples[0].updatedAt == second.updatedAt, "newest sample first")
 require(samples[0].weekly?.remainingPercent == 51, "newest weekly remaining")
 require(samples[0].fiveHour == nil, "nil five-hour persists")
 require(samples[1].fiveHour?.remainingPercent == 80, "older five-hour remaining")
+require(filteredSamples.count == 1, "filtered history sample count")
+require(filteredSamples[0].updatedAt == second.updatedAt, "filtered history includes only samples inside range")
 
 try? FileManager.default.removeItem(at: databaseURL)
 print("HistoryTests passed")
