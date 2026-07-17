@@ -50,6 +50,7 @@ struct OrbView: View {
             labelStack
         }
         .frame(width: 92, height: 92)
+        .clipShape(Circle())
         .contentShape(Circle())
         .onTapGesture(perform: onToggle)
         .task(id: reduceMotion) {
@@ -65,19 +66,19 @@ struct OrbView: View {
 
     private var glow: some View {
         Circle()
+            .inset(by: 5)
             .fill(
                 RadialGradient(
                     colors: [
-                        accent.opacity(0.22),
-                        accent.opacity(0.08),
+                        accent.opacity(0.2),
+                        accent.opacity(0.07),
                         Color.clear
                     ],
                     center: .center,
-                    startRadius: 18,
-                    endRadius: 76
+                    startRadius: 10,
+                    endRadius: 45
                 )
             )
-            .blur(radius: 8)
     }
 
     private var orbBase: some View {
@@ -109,8 +110,8 @@ struct OrbView: View {
                         lineWidth: 1.2
                     )
             )
-            .shadow(color: accent.opacity(0.18), radius: 10, y: 5)
-            .shadow(color: Color(red: 0.18, green: 0.28, blue: 0.36).opacity(0.1), radius: 8, y: 6)
+            .shadow(color: accent.opacity(0.14), radius: 7, y: 4)
+            .shadow(color: Color(red: 0.18, green: 0.28, blue: 0.36).opacity(0.08), radius: 5, y: 4)
     }
 
     private var sparkleDots: some View {

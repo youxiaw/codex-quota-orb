@@ -49,6 +49,8 @@ final class OrbWindowController: NSObject, NSWindowDelegate {
         )
         hostingView.wantsLayer = true
         hostingView.layer?.backgroundColor = NSColor.clear.cgColor
+        hostingView.layer?.cornerRadius = size.width / 2
+        hostingView.layer?.masksToBounds = true
         window.contentView = hostingView
     }
 
