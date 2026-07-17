@@ -14,7 +14,7 @@ struct QuotaLineChartView: View {
                 let rect = plotRect(in: proxy.size)
 
                 grid(in: rect)
-                    .stroke(Color.white.opacity(0.13), lineWidth: 1)
+                    .stroke(Color(red: 0.13, green: 0.22, blue: 0.32).opacity(0.1), lineWidth: 1)
 
                 axisLabels(in: proxy.size)
 
@@ -25,8 +25,8 @@ struct QuotaLineChartView: View {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color.cyan.opacity(0.28),
-                                    Color.cyan.opacity(0.04),
+                                    Color(red: 0.0, green: 0.58, blue: 0.72).opacity(0.18),
+                                    Color(red: 0.0, green: 0.58, blue: 0.72).opacity(0.04),
                                     Color.clear
                                 ],
                                 startPoint: .top,
@@ -38,8 +38,8 @@ struct QuotaLineChartView: View {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color.orange.opacity(0.22),
-                                    Color.orange.opacity(0.035),
+                                    Color(red: 0.92, green: 0.48, blue: 0.14).opacity(0.16),
+                                    Color(red: 0.92, green: 0.48, blue: 0.14).opacity(0.035),
                                     Color.clear
                                 ],
                                 startPoint: .top,
@@ -48,16 +48,16 @@ struct QuotaLineChartView: View {
                         )
 
                     linePath(in: rect, series: weeklySeries)
-                        .stroke(Color.cyan.opacity(0.18), style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
+                        .stroke(Color(red: 0.0, green: 0.58, blue: 0.72).opacity(0.16), style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
                         .blur(radius: 5)
                     linePath(in: rect, series: weeklySeries)
-                        .stroke(Color.cyan.opacity(0.98), style: StrokeStyle(lineWidth: 3.2, lineCap: .round, lineJoin: .round))
+                        .stroke(Color(red: 0.0, green: 0.58, blue: 0.72), style: StrokeStyle(lineWidth: 3.2, lineCap: .round, lineJoin: .round))
 
                     linePath(in: rect, series: fiveHourSeries)
-                        .stroke(Color.orange.opacity(0.18), style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
+                        .stroke(Color(red: 0.92, green: 0.48, blue: 0.14).opacity(0.15), style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
                         .blur(radius: 4)
                     linePath(in: rect, series: fiveHourSeries)
-                        .stroke(Color.orange.opacity(0.95), style: StrokeStyle(lineWidth: 2.6, lineCap: .round, lineJoin: .round))
+                        .stroke(Color(red: 0.92, green: 0.48, blue: 0.14), style: StrokeStyle(lineWidth: 2.6, lineCap: .round, lineJoin: .round))
 
                     currentMarkers(in: rect)
                 }
@@ -86,8 +86,8 @@ struct QuotaLineChartView: View {
             .fill(
                 LinearGradient(
                     colors: [
-                        Color(red: 0.08, green: 0.1, blue: 0.15),
-                        Color(red: 0.035, green: 0.045, blue: 0.075)
+                        Color.white.opacity(0.98),
+                        Color(red: 0.93, green: 0.97, blue: 0.99)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -96,7 +96,7 @@ struct QuotaLineChartView: View {
             .overlay(
                 RadialGradient(
                     colors: [
-                        Color.cyan.opacity(0.18),
+                        Color(red: 0.0, green: 0.58, blue: 0.72).opacity(0.12),
                         Color.clear
                     ],
                     center: .topTrailing,
@@ -107,9 +107,9 @@ struct QuotaLineChartView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.14), lineWidth: 1)
+                    .strokeBorder(Color.white.opacity(0.95), lineWidth: 1)
             )
-            .shadow(color: Color.cyan.opacity(0.08), radius: 16, y: 8)
+            .shadow(color: Color(red: 0.12, green: 0.2, blue: 0.28).opacity(0.09), radius: 16, y: 8)
     }
 
     private var emptyState: some View {
@@ -120,7 +120,7 @@ struct QuotaLineChartView: View {
                 .font(.system(size: 10.5, weight: .medium, design: .rounded))
                 .foregroundStyle(.secondary)
         }
-        .foregroundStyle(.white.opacity(0.82))
+        .foregroundStyle(Color(red: 0.08, green: 0.12, blue: 0.18).opacity(0.72))
     }
 
     private var weeklySeries: [SeriesPoint] {
@@ -138,8 +138,8 @@ struct QuotaLineChartView: View {
     private var legend: some View {
         VStack {
             HStack(spacing: 10) {
-                legendItem(color: .cyan, text: "Week")
-                legendItem(color: .orange, text: "5h")
+                legendItem(color: Color(red: 0.0, green: 0.58, blue: 0.72), text: "Week")
+                legendItem(color: Color(red: 0.92, green: 0.48, blue: 0.14), text: "5h")
                 Spacer()
             }
             Spacer()
@@ -155,7 +155,7 @@ struct QuotaLineChartView: View {
                 .frame(width: 14, height: 3)
             Text(text)
                 .font(.system(size: 9.5, weight: .bold, design: .rounded))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(red: 0.08, green: 0.12, blue: 0.18).opacity(0.55))
         }
     }
 
@@ -180,7 +180,7 @@ struct QuotaLineChartView: View {
     private func yLabel(_ text: String, at y: CGFloat) -> some View {
         Text(text)
             .font(.system(size: 9.5, weight: .bold, design: .rounded))
-            .foregroundStyle(.secondary.opacity(0.85))
+            .foregroundStyle(Color(red: 0.08, green: 0.12, blue: 0.18).opacity(0.48))
             .frame(width: 26, alignment: .trailing)
             .position(x: 18, y: y + 7)
     }
@@ -188,7 +188,7 @@ struct QuotaLineChartView: View {
     private func xLabel(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 9.5, weight: .bold, design: .rounded))
-            .foregroundStyle(.secondary.opacity(0.85))
+            .foregroundStyle(Color(red: 0.08, green: 0.12, blue: 0.18).opacity(0.48))
     }
 
     private func hoverOverlay(_ samplePoint: SamplePoint, in rect: CGRect) -> some View {
@@ -198,13 +198,13 @@ struct QuotaLineChartView: View {
                 path.move(to: CGPoint(x: x, y: rect.minY))
                 path.addLine(to: CGPoint(x: x, y: rect.maxY))
             }
-            .stroke(Color.white.opacity(0.28), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+            .stroke(Color(red: 0.08, green: 0.12, blue: 0.18).opacity(0.24), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
             if let weekly = samplePoint.snapshot.weekly?.remainingPercent {
-                dot(at: CGPoint(x: x, y: yPosition(for: weekly, in: rect)), color: .cyan)
+                dot(at: CGPoint(x: x, y: yPosition(for: weekly, in: rect)), color: Color(red: 0.0, green: 0.58, blue: 0.72))
             }
             if let fiveHour = samplePoint.snapshot.fiveHour?.remainingPercent {
-                dot(at: CGPoint(x: x, y: yPosition(for: fiveHour, in: rect)), color: .orange)
+                dot(at: CGPoint(x: x, y: yPosition(for: fiveHour, in: rect)), color: Color(red: 0.92, green: 0.48, blue: 0.14))
             }
 
             tooltip(samplePoint.snapshot)
@@ -218,10 +218,10 @@ struct QuotaLineChartView: View {
     private func currentMarkers(in rect: CGRect) -> some View {
         ZStack {
             if let point = weeklySeries.last {
-                marker(point, in: rect, color: .cyan)
+                marker(point, in: rect, color: Color(red: 0.0, green: 0.58, blue: 0.72))
             }
             if let point = fiveHourSeries.last {
-                marker(point, in: rect, color: .orange)
+                marker(point, in: rect, color: Color(red: 0.92, green: 0.48, blue: 0.14))
             }
         }
     }
@@ -257,19 +257,19 @@ struct QuotaLineChartView: View {
             Text(fullTimeLabel(snapshot.updatedAt))
                 .font(.system(size: 10, weight: .heavy, design: .rounded))
             Text("Week \(percentLabel(snapshot.weekly?.remainingPercent))")
-                .foregroundStyle(.cyan)
+                .foregroundStyle(Color(red: 0.0, green: 0.58, blue: 0.72))
             Text("5h \(percentLabel(snapshot.fiveHour?.remainingPercent))")
-                .foregroundStyle(.orange)
+                .foregroundStyle(Color(red: 0.92, green: 0.48, blue: 0.14))
         }
         .font(.system(size: 10, weight: .bold, design: .rounded))
         .padding(.horizontal, 9)
         .padding(.vertical, 7)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .background(Color.white.opacity(0.96), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
+                .strokeBorder(Color(red: 0.08, green: 0.12, blue: 0.18).opacity(0.08), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.22), radius: 10, y: 5)
+        .shadow(color: Color.black.opacity(0.12), radius: 10, y: 5)
     }
 
     private func grid(in rect: CGRect) -> Path {

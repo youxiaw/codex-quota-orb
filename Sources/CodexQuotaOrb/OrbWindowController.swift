@@ -31,11 +31,12 @@ final class OrbWindowController: NSObject, NSWindowDelegate {
 
         window.isOpaque = false
         window.backgroundColor = .clear
+        window.hasShadow = false
         window.level = .floating
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         window.isMovableByWindowBackground = true
         window.delegate = self
-        window.contentView = NSHostingView(
+        let hostingView = NSHostingView(
             rootView: OrbView(
                 state: state,
                 onToggle: { [weak self] in
@@ -46,6 +47,9 @@ final class OrbWindowController: NSObject, NSWindowDelegate {
                 onQuit: onQuit
             )
         )
+        hostingView.wantsLayer = true
+        hostingView.layer?.backgroundColor = NSColor.clear.cgColor
+        window.contentView = hostingView
     }
 
     func show() {

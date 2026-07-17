@@ -12,25 +12,25 @@ struct OrbView: View {
                 .fill(
                     RadialGradient(
                         colors: [
-                            Color.white.opacity(0.24),
-                            Color.white.opacity(0.04),
-                            Color.black.opacity(0.3)
+                            accent.opacity(0.18),
+                            Color.white.opacity(0.05),
+                            Color.clear
                         ],
                         center: .topLeading,
                         startRadius: 0,
                         endRadius: 78
                     )
                 )
-                .blur(radius: 10)
-                .offset(x: -7, y: -8)
+                .blur(radius: 8)
+                .offset(x: -5, y: -6)
 
             Circle()
                 .fill(
                     RadialGradient(
                         colors: [
-                            Color(red: 0.18, green: 0.22, blue: 0.29),
-                            Color(red: 0.08, green: 0.1, blue: 0.15),
-                            Color(red: 0.02, green: 0.03, blue: 0.06)
+                            Color.white,
+                            Color(red: 0.91, green: 0.97, blue: 1.0),
+                            Color(red: 0.74, green: 0.9, blue: 0.96)
                         ],
                         center: .topLeading,
                         startRadius: 2,
@@ -42,9 +42,9 @@ struct OrbView: View {
                         .strokeBorder(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.72),
-                                    accent.opacity(0.38),
-                                    Color.black.opacity(0.22)
+                                    Color.white.opacity(0.98),
+                                    accent.opacity(0.5),
+                                    Color(red: 0.44, green: 0.62, blue: 0.72).opacity(0.22)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -52,15 +52,15 @@ struct OrbView: View {
                             lineWidth: 1.2
                         )
                 )
-                .shadow(color: accent.opacity(0.34), radius: 22, y: 8)
-                .shadow(color: .black.opacity(0.34), radius: 14, y: 10)
+                .shadow(color: accent.opacity(0.2), radius: 14, y: 6)
+                .shadow(color: Color(red: 0.18, green: 0.28, blue: 0.36).opacity(0.13), radius: 12, y: 8)
 
             WaterFillShape(level: max(0.08, min(0.92, percent / 100)))
                 .fill(
                     LinearGradient(
                         colors: [
-                            accent.opacity(0.78),
-                            accent.opacity(0.38)
+                            accent.opacity(0.34),
+                            accent.opacity(0.2)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -76,7 +76,7 @@ struct OrbView: View {
                         colors: [
                             accent.opacity(0.15),
                             accent,
-                            Color.white.opacity(0.88),
+                            Color.white.opacity(0.96),
                             accent.opacity(0.15)
                         ],
                         center: .center
@@ -87,12 +87,12 @@ struct OrbView: View {
                 .padding(7)
 
             Circle()
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                .stroke(Color.white.opacity(0.8), lineWidth: 1)
                 .padding(18)
 
             Circle()
-                .fill(Color.white.opacity(0.34))
-                .frame(width: 22, height: 10)
+                .fill(Color.white.opacity(0.86))
+                .frame(width: 24, height: 11)
                 .blur(radius: 2)
                 .rotationEffect(.degrees(-28))
                 .offset(x: -17, y: -26)
@@ -106,8 +106,8 @@ struct OrbView: View {
                     .tracking(0.8)
                     .opacity(0.8)
             }
-            .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.38), radius: 3, y: 1)
+            .foregroundStyle(ink)
+            .shadow(color: .white.opacity(0.55), radius: 1, y: -1)
         }
         .frame(width: 92, height: 92)
         .contentShape(Circle())
@@ -146,14 +146,18 @@ struct OrbView: View {
     private var accent: Color {
         switch percent {
         case 40...:
-            return Color(red: 0.05, green: 0.72, blue: 0.86)
+            return Color(red: 0.0, green: 0.58, blue: 0.72)
         case 20..<40:
-            return Color(red: 0.96, green: 0.62, blue: 0.25)
+            return Color(red: 0.92, green: 0.48, blue: 0.14)
         case 0..<20:
-            return Color(red: 0.96, green: 0.25, blue: 0.36)
+            return Color(red: 0.9, green: 0.16, blue: 0.26)
         default:
-            return Color(red: 0.53, green: 0.59, blue: 0.68)
+            return Color(red: 0.47, green: 0.56, blue: 0.66)
         }
+    }
+
+    private var ink: Color {
+        Color(red: 0.08, green: 0.12, blue: 0.18)
     }
 }
 
