@@ -1,7 +1,12 @@
 import Foundation
 import SQLite3
 
+private let sqliteTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+
 final class QuotaHistoryStore {
+    private static let retentionInterval: TimeInterval = 30 * 24 * 60 * 60
+    private static let cleanupInterval: TimeInterval = 24 * 60 * 60
+
     private let databaseURL: URL
 
     init(databaseURL: URL = QuotaHistoryStore.defaultDatabaseURL()) throws {
@@ -23,6 +28,15 @@ final class QuotaHistoryStore {
                     weekly_remaining REAL,
                     weekly_used REAL,
                     weekly_reset_at REAL
+                );
+                """
+            )
+            try execute(
+                database,
+                """
+                CREATE TABLE IF NOT EXISTS quota_metadata (
+                    key TEXT PRIMARY KEY,
+                    value REAL NOT NULL
                 );
                 """
             )
@@ -59,6 +73,8 @@ final class QuotaHistoryStore {
             guard sqlite3_step(statement) == SQLITE_DONE else {
                 throw error(database)
             }
+
+            try cleanupIfNeeded(database, now: snapshot.updatedAt)
         }
     }
 
@@ -158,6 +174,65 @@ final class QuotaHistoryStore {
         return NSError(domain: "QuotaHistoryStore", code: Int(sqlite3_errcode(database)), userInfo: [
             NSLocalizedDescriptionKey: message
         ])
+    }
+
+    private func cleanupIfNeeded(_ database: OpaquePointer, now: Date) throws {
+        let nowTimestamp = now.timeIntervalSince1970
+        if let lastCleanup = try metadataValue(database, key: "last_cleanup_at"),
+           nowTimestamp - lastCleanup < Self.cleanupInterval {
+            return
+        }
+
+        try deleteSamples(database, olderThan: nowTimestamp - Self.retentionInterval)
+        try setMetadataValue(database, key: "last_cleanup_at", value: nowTimestamp)
+    }
+
+    private func deleteSamples(_ database: OpaquePointer, olderThan cutoff: TimeInterval) throws {
+        let sql = "DELETE FROM quota_samples WHERE updated_at < ?;"
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw error(database)
+        }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_double(statement, 1, cutoff)
+
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            throw error(database)
+        }
+    }
+
+    private func metadataValue(_ database: OpaquePointer, key: String) throws -> Double? {
+        let sql = "SELECT value FROM quota_metadata WHERE key = ?;"
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw error(database)
+        }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_text(statement, 1, key, -1, sqliteTransient)
+
+        guard sqlite3_step(statement) == SQLITE_ROW else {
+            return nil
+        }
+        return sqlite3_column_double(statement, 0)
+    }
+
+    private func setMetadataValue(_ database: OpaquePointer, key: String, value: Double) throws {
+        let sql = """
+        INSERT INTO quota_metadata (key, value)
+        VALUES (?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value;
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw error(database)
+        }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_text(statement, 1, key, -1, sqliteTransient)
+        sqlite3_bind_double(statement, 2, value)
+
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            throw error(database)
+        }
     }
 
     private func bind(_ statement: OpaquePointer?, _ index: Int32, _ value: Double?) {

@@ -52,5 +52,50 @@ require(samples[1].fiveHour?.remainingPercent == 80, "older five-hour remaining"
 require(filteredSamples.count == 1, "filtered history sample count")
 require(filteredSamples[0].updatedAt == second.updatedAt, "filtered history includes only samples inside range")
 
+let retentionDatabaseURL = URL(fileURLWithPath: NSTemporaryDirectory())
+    .appendingPathComponent("codex-quota-retention-\(UUID().uuidString).sqlite")
+let retentionStore = try QuotaHistoryStore(databaseURL: retentionDatabaseURL)
+let oldSnapshot = QuotaSnapshot(
+    fiveHour: nil,
+    weekly: QuotaWindow(
+        remainingPercent: 10,
+        usedPercent: 90,
+        windowDurationMinutes: 10_080,
+        resetAt: nil
+    ),
+    updatedAt: Date(timeIntervalSince1970: 1_000)
+)
+let retainedSnapshot = QuotaSnapshot(
+    fiveHour: nil,
+    weekly: QuotaWindow(
+        remainingPercent: 88,
+        usedPercent: 12,
+        windowDurationMinutes: 10_080,
+        resetAt: nil
+    ),
+    updatedAt: Date(timeIntervalSince1970: 1_000 + 31 * 24 * 60 * 60)
+)
+let nextDayOldSnapshot = QuotaSnapshot(
+    fiveHour: nil,
+    weekly: QuotaWindow(
+        remainingPercent: 20,
+        usedPercent: 80,
+        windowDurationMinutes: 10_080,
+        resetAt: nil
+    ),
+    updatedAt: Date(timeIntervalSince1970: 2_000)
+)
+
+try retentionStore.save(oldSnapshot)
+try retentionStore.save(retainedSnapshot)
+let retainedSamples = try retentionStore.recentSamples(limit: 10)
+require(retainedSamples.count == 1, "retention cleanup removes samples older than 30 days")
+require(retainedSamples[0].updatedAt == retainedSnapshot.updatedAt, "retention cleanup keeps recent sample")
+
+try retentionStore.save(nextDayOldSnapshot)
+let skippedCleanupSamples = try retentionStore.recentSamples(limit: 10)
+require(skippedCleanupSamples.count == 2, "retention cleanup is skipped when already run recently")
+
 try? FileManager.default.removeItem(at: databaseURL)
+try? FileManager.default.removeItem(at: retentionDatabaseURL)
 print("HistoryTests passed")
