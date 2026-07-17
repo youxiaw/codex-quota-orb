@@ -2,6 +2,8 @@ import AppKit
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    static let refreshIntervalSeconds: TimeInterval = 60
+
     private let state = QuotaState()
     private var orbController: OrbWindowController?
     private var detailController: DetailPanelController?
@@ -29,7 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         orbController.show()
 
         state.refresh()
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak state] _ in
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: Self.refreshIntervalSeconds, repeats: true) { [weak state] _ in
             Task { @MainActor in
                 state?.refresh()
             }

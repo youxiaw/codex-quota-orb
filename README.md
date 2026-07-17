@@ -6,7 +6,8 @@ Codex Quota Orb is a local-first macOS desktop utility for keeping Codex quota v
 
 - Floating always-on-top orb for quick quota visibility.
 - Click-to-open detail panel with 5-hour and weekly quota windows.
-- Local history curve backed by SQLite.
+- Local history curve backed by SQLite, with axis labels and hover details.
+- Automatic refresh every 60 seconds, with manual refresh available from the orb menu and detail panel.
 - Reads quota through the local Codex runtime JSON-RPC method `account/rateLimits/read`.
 - Does not read `auth.json`, browser cookies, chat content, or process memory.
 - No third-party dependencies.
